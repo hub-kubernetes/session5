@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+#apiVersion: extensions/v1beta1
+#kind: Deployment
+metadata:
+  name: mysqlstateful
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-stateful
+  serviceName: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql-stateful
+    spec:
+      containers:
+        - image: mysql:5.7
+          name: mysql
+          args:
+            - --ignore-db-dir=lost+found
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "root"
+          ports:
+            - containerPort: 3306
+              name: mysql-port
+          resources:
+              requests:
+                 cpu: "100m"
+                 memory: "128Mi"
+              limits:
+                 cpu: "1024m"
+                 memory: "1024Mi"
+          # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#define-a-tcp-liveness-probe
+          readinessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 6
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim 
