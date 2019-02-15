@@ -1,0 +1,50 @@
+Steps to create EFK stack on kubernetes - 
+
+We will utilize the addons provided by kubernetes to create this stack
+
+1. Clone the repository - https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/fluentd-elasticsearch
+
+2. cd kubernetes/cluster/addons/fluentd-elasticsearch
+
+3. Make customizations (if any) to the configurations 
+
+4. Below are the files that needs to be applied - 
+
+-rw-r--r-- 1 root root   354 Feb 10 18:35 kibana-service.yaml
+-rw-r--r-- 1 root root  1052 Feb 10 18:35 kibana-deployment.yaml
+-rw-r--r-- 1 root root 16124 Feb 10 18:35 fluentd-es-configmap.yaml
+-rw-r--r-- 1 root root  2820 Feb 10 18:35 es-statefulset.yaml
+-rw-r--r-- 1 root root   382 Feb 10 18:35 es-service.yaml
+-rw-r--r-- 1 root root  2702 Feb 10 18:38 fluentd-es-ds.yaml
+
+5. kubectl apply -f fluentd-es-configmap.yaml -f fluentd-es-ds.yaml -f es-statefulset.yaml -f es-service.yaml -f kibana-deployment.yaml -f  kibana-service.yaml
+
+6. Verify running pods - kubectl get pods --all-namespaces
+
+7. Start kube proxy : kubectl proxy --address 0.0.0.0 --accept-hosts '.*'
+
+8. The above kube proxy accepts all hosts. You can customize the --accept-host to ensure only selected subnet can access 
+
+9. If you dont want to use kube proxy, add the podsecuritypolicies to the pods. podsecuritypolicies are available inside podsecuritypolicies directory 
+
+10. Access the kibana dashboard using the rest api URL : http://35.231.4.107:8001/api/v1/namespaces/kube-system/services/kibana-logging/proxy
+
+11. Breakdown of URL - 
+
+    a. 35.231.4.107:8001  -- external IP address of your host : Port on which kube-proxy is up 
+    
+    b. api -- apiserver 
+    
+    c. v1 -- apiVersion that is being exposed by the kibana Pod 
+    
+    d. namespaces -- namespaces object 
+    
+    e. kube-system -- namespaces which holds kibana deployment. If you are using a namespace different from kube-system, then change this entry
+    
+    f. services -- Accessing services resource inside kube-system namespace 
+    
+    g. kibana-logging -- name of the service that you want to access
+    
+    h. proxy -- Use proxy to access kibana service 
+
+
